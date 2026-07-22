@@ -160,8 +160,8 @@ Keeping the project under the Linux home directory avoids slower file operations
 ## 5. Clone This Repository
 
 ```bash
-git clone https://github.com/shashika-mora/pintos-wsl.git
-cd pintos-wsl
+git clone https://github.com/shashika-mora/pintos-wsl.git pintos
+cd pintos
 ```
 
 ---
@@ -217,9 +217,28 @@ CFLAGS = -m32 -g -msoft-float -O0 -fno-pie -fno-pic
 ## 1. Build the Pintos Utilities
 
 ```bash
-cd ~/cs2043/pintos-wsl/src/utils
+cd ~/cs2043/pintos/src/utils
 make clean
 make
+```
+
+Add the Pintos utilities directory to `PATH`:
+
+```bash
+echo 'export PATH="$HOME/cs2043/pintos/src/utils:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+Verify that the `pintos` command is available:
+
+```bash
+which pintos
+```
+
+The output should end with:
+
+```text
+cs2043/pintos/src/utils/pintos
 ```
 
 This builds host-side tools such as:
@@ -239,7 +258,7 @@ These programs run inside Debian and are used to start QEMU, create disk images 
 ## 2. Build the Threads Kernel
 
 ```bash
-cd ~/cs2043/pintos-wsl/src/threads
+cd ~/cs2043/pintos/src/threads
 make clean
 make
 ```
@@ -278,34 +297,73 @@ make: *** Error
 
 # Running Pintos
 
+## Basic Pintos Boot
+
+The following is the basic command sequence used in the Pintos installation guide.
+
+Build the threads kernel:
+
+```bash
+cd ~/cs2043/pintos/src/threads
+make
+```
+
 Move into the build directory:
 
 ```bash
-cd ~/cs2043/pintos-wsl/src/threads/build
+cd build
 ```
 
-Run the `alarm-single` kernel test:
+Boot Pintos:
 
 ```bash
-../../utils/pintos -v --qemu -- -q run alarm-single
+pintos --
+```
+
+If the installation is working, Pintos should boot and eventually display:
+
+```text
+Boot complete.
+```
+
+The basic command may open a separate QEMU window. Press `Ctrl + C` in the Debian terminal when you need to stop it.
+
+### Run Pintos Inside the Terminal
+
+To keep the QEMU output inside the Debian terminal and disable the separate VGA window, use:
+
+```bash
+pintos -v --qemu --
+```
+
+The `-v` option disables VGA output, while `--qemu` explicitly selects QEMU.
+
+---
+
+## Run the `alarm-single` Test
+
+From the same build directory, run:
+
+```bash
+pintos -v --qemu -- -q run alarm-single
 ```
 
 Arguments:
 
 | Argument | Meaning |
 |---|---|
-| `../../utils/pintos` | Pintos launcher script |
+| `pintos` | Pintos launcher script available through `PATH` |
 | `-v` | Disable the separate graphical VGA window |
 | `--qemu` | Use QEMU as the emulator |
-| `--` | Pass the remaining arguments to Pintos |
-| `-q` | Shut down after the test finishes |
-| `run alarm-single` | Run the `alarm-single` thread test |
+| `--` | Pass the remaining arguments to the Pintos kernel |
+| `-q` | Shut down Pintos after the command finishes |
+| `run alarm-single` | Run the `alarm-single` kernel-thread test |
 
 ---
 
-## Expected Successful Output
+## Expected Successful Test Output
 
-A successful boot should contain output similar to:
+A successful test should contain output similar to:
 
 ```text
 Pintos booting with 3,968 kB RAM...
@@ -382,6 +440,37 @@ Thread returns to the ready state
 
 # Common Problems
 
+## `pintos: command not found`
+
+Make sure the Pintos utilities were built:
+
+```bash
+cd ~/cs2043/pintos/src/utils
+make
+```
+
+Add the utilities directory to `PATH`:
+
+```bash
+echo 'export PATH="$HOME/cs2043/pintos/src/utils:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+Verify the command:
+
+```bash
+which pintos
+```
+
+As a direct fallback, the launcher can also be run from the threads build directory using:
+
+```bash
+../../utils/pintos -v --qemu --
+```
+
+---
+
+
 ## Pintos Repeatedly Reboots
 
 Example:
@@ -406,7 +495,7 @@ CFLAGS = -m32 -g -msoft-float -O0 -fno-pie -fno-pic
 Then rebuild from a clean state:
 
 ```bash
-cd ~/cs2043/pintos-wsl/src/threads
+cd ~/cs2043/pintos/src/threads
 make clean
 make
 ```
@@ -415,7 +504,7 @@ Run the test again:
 
 ```bash
 cd build
-../../utils/pintos -v --qemu -- -q run alarm-single
+pintos -v --qemu -- -q run alarm-single
 ```
 
 ---
@@ -471,7 +560,7 @@ qemu-system-i386 --version
 
 ---
 
-## Stop a Running Pintos Test
+## Stop Pintos or a Running Test
 
 Press:
 
@@ -494,16 +583,30 @@ to release it.
 ## Rebuild the Threads Kernel
 
 ```bash
-cd ~/cs2043/pintos-wsl/src/threads
+cd ~/cs2043/pintos/src/threads
 make clean
 make
+```
+
+## Basic Pintos Boot
+
+```bash
+cd ~/cs2043/pintos/src/threads/build
+pintos --
+```
+
+## Basic Terminal-Only Boot
+
+```bash
+cd ~/cs2043/pintos/src/threads/build
+pintos -v --qemu --
 ```
 
 ## Run `alarm-single`
 
 ```bash
-cd ~/cs2043/pintos-wsl/src/threads/build
-../../utils/pintos -v --qemu -- -q run alarm-single
+cd ~/cs2043/pintos/src/threads/build
+pintos -v --qemu -- -q run alarm-single
 ```
 
 ## Inspect the Kernel Binary
@@ -516,7 +619,7 @@ file kernel.bin
 ## Check Repository Changes
 
 ```bash
-cd ~/cs2043/pintos-wsl
+cd ~/cs2043/pintos
 git status
 git diff
 ```
@@ -569,7 +672,8 @@ I plan to use this repository in the following order:
 - Building the old GCC 6.2 Pintos cross-compiler is not required for this setup.
 - The `-fno-pie` and `-fno-pic` flags are necessary when using modern Debian GCC versions.
 - Pintos should be stored inside the WSL Linux filesystem.
-- Headless QEMU mode is recommended because it keeps all output inside the terminal.
+- The `src/utils` directory is added to `PATH`, allowing the guide-style `pintos --` command to be used.
+- Terminal-only QEMU mode is useful because it keeps all output inside the Debian terminal.
 - This setup was tested with the JHU CS318 Pintos distribution.
 
 ---
@@ -590,5 +694,3 @@ This repository is based on the JHU CS318 Pintos distribution:
 Built as part of my Operating Systems learning journey.
 
 </div>
-
-One recommendation: commit the `src/Make.config` compatibility change into your fork. Then people cloning `pintos-wsl` will not need to apply the `sed` command manually, and the README can later describe that fix as already included.
