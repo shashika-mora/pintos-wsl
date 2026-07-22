@@ -590,6 +590,5 @@ This repository is based on the JHU CS318 Pintos distribution:
 Built as part of my Operating Systems learning journey.
 
 </div>
-```
 
 One recommendation: commit the `src/Make.config` compatibility change into your fork. Then people cloning `pintos-wsl` will not need to apply the `sed` command manually, and the README can later describe that fix as already included.
