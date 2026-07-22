@@ -1,127 +1,152 @@
 <div align="center">
 
-# Pintos on Windows 11 with WSL2
+Pintos on Windows 11 with WSL2
 
-### A working Pintos development environment using Debian, WSL2, GCC and QEMU
+A working Pintos development environment using Ubuntu or Debian, WSL2, GCC and QEMU
 
 </div>
 
----
-
-## About This Repository
+About This Repository
 
 This repository is my fork of the JHU CS318 Pintos distribution.
 
 I use it to learn and experiment with operating-system concepts such as:
 
-- Kernel threads
-- Process management
-- CPU scheduling
-- Synchronization
-- System calls
-- Virtual memory
-- File systems
-- Interrupt handling
-- Kernel debugging
+Kernel threads
 
-The original Pintos code was designed for older Linux toolchains. This README documents the setup that I successfully used on **Windows 11 with Debian running through WSL2**.
+Process management
+
+CPU scheduling
+
+Synchronization
+
+System calls
+
+Virtual memory
+
+File systems
+
+Interrupt handling
+
+Kernel debugging
+
+The original Pintos code was designed for older Linux toolchains. This README documents the WSL2 setup I used for Pintos on Windows 11 with Ubuntu or Debian.
 
 This method does not require:
 
-- Installing Ubuntu as the main operating system
-- Dual booting Windows and Linux
-- Creating disk partitions
-- Building the old GCC 6.2 cross-compiler
+Installing Linux as the main operating system
 
----
+Dual booting Windows and Linux
 
-## Tested Environment
+Creating disk partitions
+
+Building the old GCC 6.2 cross-compiler
+
+Tested Environment
 
 This setup was tested with:
 
-| Component | Version |
-|---|---|
-| Host operating system | Windows 11 |
-| Linux environment | Debian 13 through WSL2 |
-| Architecture | x86-64 host, 32-bit x86 Pintos target |
-| GCC | Debian GCC 14 |
-| GNU Make | 4.4 |
-| QEMU | 10 |
-| Pintos source | JHU CS318 Pintos fork |
+Component
 
----
+Version
 
-## How the Environment Works
+Host operating system
 
-```text
+Windows 11
+
+Linux environment
+
+Debian 13 or Ubuntu 26.04 LTS through WSL2
+
+Architecture
+
+x86-64 host, 32-bit x86 Pintos target
+
+Compiler
+
+Distribution-provided GCC
+
+Build tools
+
+GNU Make and Binutils
+
+Emulator
+
+QEMU
+
+Pintos source
+
+JHU CS318 Pintos fork
+
+The full Pintos boot and alarm-single test were verified on Debian 13. The same source, compatibility flags and build process were also verified on Ubuntu 26.04 LTS.
+
+How the Environment Works
+
 Windows 11
     ↓
 WSL2
     ↓
-Debian development environment
+Ubuntu or Debian development environment
     ↓
 GCC builds a 32-bit x86 Pintos kernel
     ↓
 QEMU emulates an x86 computer
     ↓
 Pintos boots inside the emulated computer
-```
 
-Pintos itself does not run as a normal Windows or Debian application.
+Pintos itself does not run as a normal Windows, Ubuntu or Debian application.
 
-The source code is compiled inside Debian, while QEMU creates the virtual hardware on which the Pintos kernel runs.
+The source code is compiled inside the selected WSL2 Linux distribution, while QEMU creates the virtual hardware on which the Pintos kernel runs.
 
----
+Installation
 
-# Installation
+1. Install WSL2 with Ubuntu or Debian
 
-## 1. Install WSL2 with Debian
+Open PowerShell as Administrator and install one of the following distributions.
 
-Open **PowerShell as Administrator** and run:
+Ubuntu
 
-```powershell
+wsl --install -d Ubuntu
+
+Debian
+
 wsl --install -d Debian
-```
 
 Restart Windows if requested.
 
-After restarting, open Debian from the Start menu and create a Linux username and password.
+After restarting, open the installed distribution from the Start menu and create a Linux username and password.
 
-Check that Debian is using WSL2:
+Check that it is using WSL2:
 
-```powershell
 wsl -l -v
-```
 
-Expected output:
+Example output:
 
-```text
+NAME      STATE      VERSION
+Ubuntu    Running    2
+
+or:
+
 NAME      STATE      VERSION
 Debian    Running    2
-```
 
-If Debian is using WSL1, convert it:
+If the selected distribution is using WSL1, convert it by using its exact name:
 
-```powershell
+wsl --set-version Ubuntu 2
+
+or:
+
 wsl --set-version Debian 2
-```
 
----
+2. Update Ubuntu or Debian
 
-## 2. Update Debian
+Open the Ubuntu or Debian terminal and run:
 
-Open the Debian terminal and run:
-
-```bash
 sudo apt update
 sudo apt full-upgrade -y
-```
 
----
+3. Install the Required Packages
 
-## 3. Install the Required Packages
-
-```bash
 sudo apt install -y \
   build-essential \
   gcc-multilib \
@@ -131,149 +156,116 @@ sudo apt install -y \
   perl \
   qemu-system-x86 \
   file
-```
 
 These packages provide:
 
-- GCC and Make for compiling Pintos
-- 32-bit x86 compilation support
-- GNU Binutils for linking and inspecting binaries
-- Perl for the Pintos launcher scripts
-- QEMU for x86 hardware emulation
-- Git for source-code management
+GCC and Make for compiling Pintos
 
----
+32-bit x86 compilation support
 
-## 4. Create a Workspace
+GNU Binutils for linking and inspecting binaries
 
-Keep the Pintos project inside the Linux filesystem instead of `/mnt/c`.
+Perl for the Pintos launcher scripts
 
-```bash
+QEMU for x86 hardware emulation
+
+Git for source-code management
+
+4. Create a Workspace
+
+Keep the Pintos project inside the Linux filesystem instead of /mnt/c.
+
 mkdir -p ~/cs2043
 cd ~/cs2043
-```
 
 Keeping the project under the Linux home directory avoids slower file operations and Windows/Linux permission problems.
 
----
+5. Clone This Repository
 
-## 5. Clone This Repository
-
-```bash
 git clone https://github.com/shashika-mora/pintos-wsl.git pintos
 cd pintos
-```
 
----
+GCC Compatibility Fix
 
-# GCC Compatibility Fix
-
-Modern Debian compilers generate position-independent executables by default.
+Modern Ubuntu and Debian compilers may generate position-independent executables by default.
 
 Pintos is an old fixed-address kernel and should not be compiled as position-independent code. Without disabling PIE and PIC, Pintos may compile successfully but repeatedly reboot when QEMU tries to run it.
 
 Open:
 
-```text
 src/Make.config
-```
 
 Find:
 
-```makefile
 CFLAGS = -m32 -g -msoft-float -O0
-```
 
 Change it to:
 
-```makefile
 CFLAGS = -m32 -g -msoft-float -O0 -fno-pie -fno-pic
-```
 
 The same change can be applied using:
 
-```bash
 sed -i \
   's/^CFLAGS = -m32 -g -msoft-float -O0$/CFLAGS = -m32 -g -msoft-float -O0 -fno-pie -fno-pic/' \
   src/Make.config
-```
 
 Verify the change:
 
-```bash
 grep '^CFLAGS' src/Make.config
-```
 
 Expected output:
 
-```text
 CFLAGS = -m32 -g -msoft-float -O0 -fno-pie -fno-pic
-```
 
----
+Building Pintos
 
-# Building Pintos
+1. Build the Pintos Utilities
 
-## 1. Build the Pintos Utilities
-
-```bash
 cd ~/cs2043/pintos/src/utils
 make clean
 make
-```
 
-Add the Pintos utilities directory to `PATH`:
+Make sure the Pintos launcher script is executable:
 
-```bash
+chmod +x ~/cs2043/pintos/src/utils/pintos
+
+Add the Pintos utilities directory to PATH:
+
 echo 'export PATH="$HOME/cs2043/pintos/src/utils:$PATH"' >> ~/.bashrc
 source ~/.bashrc
-```
 
-Verify that the `pintos` command is available:
+Verify that the pintos command is available:
 
-```bash
 which pintos
-```
 
 The output should end with:
 
-```text
 cs2043/pintos/src/utils/pintos
-```
 
 This builds host-side tools such as:
 
-```text
 pintos
 pintos-mkdisk
 setitimer-helper
 squish-pty
 squish-unix
-```
 
-These programs run inside Debian and are used to start QEMU, create disk images and control Pintos tests.
+These programs run inside the WSL2 Linux environment and are used to start QEMU, create disk images and control Pintos tests.
 
----
+2. Build the Threads Kernel
 
-## 2. Build the Threads Kernel
-
-```bash
 cd ~/cs2043/pintos/src/threads
 make clean
 make
-```
 
 A successful build creates files such as:
 
-```text
 build/kernel.o
 build/kernel.bin
 build/loader.bin
-```
 
 The build process is approximately:
 
-```text
 Pintos C and assembly source
             ↓
 32-bit object files
@@ -283,89 +275,86 @@ kernel.o
 kernel.bin
             ↓
 QEMU loads and executes the kernel
-```
 
 Some warnings from modern GCC are expected because Pintos was written for older compilers.
 
 Warnings are acceptable as long as the build finishes without:
 
-```text
 make: *** Error
-```
 
----
+Running Pintos
 
-# Running Pintos
-
-## Basic Pintos Boot
+Basic Pintos Boot
 
 The following is the basic command sequence used in the Pintos installation guide.
 
 Build the threads kernel:
 
-```bash
 cd ~/cs2043/pintos/src/threads
 make
-```
 
 Move into the build directory:
 
-```bash
 cd build
-```
 
 Boot Pintos:
 
-```bash
 pintos --
-```
 
 If the installation is working, Pintos should boot and eventually display:
 
-```text
 Boot complete.
-```
 
-The basic command may open a separate QEMU window. Press `Ctrl + C` in the Debian terminal when you need to stop it.
+The basic command may open a separate QEMU window. Press Ctrl + C in the Ubuntu or Debian terminal when you need to stop it.
 
-### Run Pintos Inside the Terminal
+Run Pintos Inside the Terminal
 
-To keep the QEMU output inside the Debian terminal and disable the separate VGA window, use:
+To keep the QEMU output inside the Ubuntu or Debian terminal and disable the separate VGA window, use:
 
-```bash
 pintos -v --qemu --
-```
 
-The `-v` option disables VGA output, while `--qemu` explicitly selects QEMU.
+The -v option disables VGA output, while --qemu explicitly selects QEMU.
 
----
-
-## Run the `alarm-single` Test
+Run the alarm-single Test
 
 From the same build directory, run:
 
-```bash
 pintos -v --qemu -- -q run alarm-single
-```
 
 Arguments:
 
-| Argument | Meaning |
-|---|---|
-| `pintos` | Pintos launcher script available through `PATH` |
-| `-v` | Disable the separate graphical VGA window |
-| `--qemu` | Use QEMU as the emulator |
-| `--` | Pass the remaining arguments to the Pintos kernel |
-| `-q` | Shut down Pintos after the command finishes |
-| `run alarm-single` | Run the `alarm-single` kernel-thread test |
+Argument
 
----
+Meaning
 
-## Expected Successful Test Output
+pintos
+
+Pintos launcher script available through PATH
+
+-v
+
+Disable the separate graphical VGA window
+
+--qemu
+
+Use QEMU as the emulator
+
+--
+
+Pass the remaining arguments to the Pintos kernel
+
+-q
+
+Shut down Pintos after the command finishes
+
+run alarm-single
+
+Run the alarm-single kernel-thread test
+
+Expected Successful Test Output
 
 A successful test should contain output similar to:
 
-```text
 Pintos booting with 3,968 kB RAM...
 367 pages available in kernel pool.
 367 pages available in user pool.
@@ -384,45 +373,43 @@ Executing 'alarm-single':
 
 Execution of 'alarm-single' complete.
 Powering off...
-```
 
 This confirms that:
 
-- The bootloader executed
-- The Pintos kernel was loaded
-- Memory initialization succeeded
-- Timer initialization succeeded
-- Kernel threads were created
-- The thread test completed
-- Pintos shut down normally
+The bootloader executed
 
----
+The Pintos kernel was loaded
 
-# Understanding the Alarm Test
+Memory initialization succeeded
 
-The `alarm-single` test creates five kernel threads.
+Timer initialization succeeded
 
-```text
+Kernel threads were created
+
+The thread test completed
+
+Pintos shut down normally
+
+Understanding the Alarm Test
+
+The alarm-single test creates five kernel threads.
+
 Thread 0 → sleeps for 10 timer ticks
 Thread 1 → sleeps for 20 timer ticks
 Thread 2 → sleeps for 30 timer ticks
 Thread 3 → sleeps for 40 timer ticks
 Thread 4 → sleeps for 50 timer ticks
-```
 
 The expected wake-up order is:
 
-```text
 Thread 0
 Thread 1
 Thread 2
 Thread 3
 Thread 4
-```
 
 This test connects to operating-system concepts such as:
 
-```text
 Timer interrupt
     ↓
 Running thread goes to sleep
@@ -434,207 +421,159 @@ Scheduler runs another thread
 Wake-up time is reached
     ↓
 Thread returns to the ready state
-```
 
----
+Common Problems
 
-# Common Problems
+pintos: Permission denied
 
-## `pintos: command not found`
+Give the Pintos launcher script executable permission:
+
+chmod +x ~/cs2043/pintos/src/utils/pintos
+
+Verify the permission:
+
+ls -l ~/cs2043/pintos/src/utils/pintos
+
+The permission string should contain x, for example:
+
+-rwxr-xr-x
+
+Then retry from the threads build directory:
+
+cd ~/cs2043/pintos/src/threads/build
+../../utils/pintos -v --qemu -- -q run alarm-single
+
+pintos: command not found
 
 Make sure the Pintos utilities were built:
 
-```bash
 cd ~/cs2043/pintos/src/utils
 make
-```
 
-Add the utilities directory to `PATH`:
+Add the utilities directory to PATH:
 
-```bash
 echo 'export PATH="$HOME/cs2043/pintos/src/utils:$PATH"' >> ~/.bashrc
 source ~/.bashrc
-```
 
 Verify the command:
 
-```bash
 which pintos
-```
 
 As a direct fallback, the launcher can also be run from the threads build directory using:
 
-```bash
 ../../utils/pintos -v --qemu --
-```
 
----
-
-
-## Pintos Repeatedly Reboots
+Pintos Repeatedly Reboots
 
 Example:
 
-```text
 Loading...
 Kernel command line: -q run alarm-single
 Pintos booting with Pintos hda1
 Loading...
 Kernel command line: -q run alarm-single
 ...
-```
 
 This usually means the kernel was compiled using incompatible position-independent code.
 
-Confirm that `src/Make.config` contains:
+Confirm that src/Make.config contains:
 
-```makefile
 CFLAGS = -m32 -g -msoft-float -O0 -fno-pie -fno-pic
-```
 
 Then rebuild from a clean state:
 
-```bash
 cd ~/cs2043/pintos/src/threads
 make clean
 make
-```
 
 Run the test again:
 
-```bash
 cd build
 pintos -v --qemu -- -q run alarm-single
-```
 
----
-
-## `gcc -m32` Does Not Work
+gcc -m32 Does Not Work
 
 Install the 32-bit compiler support:
 
-```bash
 sudo apt install -y gcc-multilib
-```
 
 Test it:
 
-```bash
 printf 'void test(void) {}\n' |
 gcc -m32 -ffreestanding -fno-pie -x c -c -o /tmp/pintos32.o -
-```
 
 Inspect the output:
 
-```bash
 file /tmp/pintos32.o
-```
 
 Expected:
 
-```text
 ELF 32-bit LSB relocatable, Intel 80386
-```
 
----
+file: command not found
 
-## `file: command not found`
-
-```bash
 sudo apt install -y file
-```
 
----
+qemu-system-i386: command not found
 
-## `qemu-system-i386: command not found`
-
-```bash
 sudo apt install -y qemu-system-x86
-```
 
 Verify:
 
-```bash
 qemu-system-i386 --version
-```
 
----
-
-## Stop Pintos or a Running Test
+Stop Pintos or a Running Test
 
 Press:
 
-```text
 Ctrl + C
-```
 
 If QEMU has captured the keyboard or mouse, use:
 
-```text
 Ctrl + Alt + G
-```
 
 to release it.
 
----
+Useful Commands
 
-# Useful Commands
+Rebuild the Threads Kernel
 
-## Rebuild the Threads Kernel
-
-```bash
 cd ~/cs2043/pintos/src/threads
 make clean
 make
-```
 
-## Basic Pintos Boot
+Basic Pintos Boot
 
-```bash
 cd ~/cs2043/pintos/src/threads/build
 pintos --
-```
 
-## Basic Terminal-Only Boot
+Basic Terminal-Only Boot
 
-```bash
 cd ~/cs2043/pintos/src/threads/build
 pintos -v --qemu --
-```
 
-## Run `alarm-single`
+Run alarm-single
 
-```bash
 cd ~/cs2043/pintos/src/threads/build
 pintos -v --qemu -- -q run alarm-single
-```
 
-## Inspect the Kernel Binary
+Inspect the Kernel Binary
 
-```bash
 file kernel.o
 file kernel.bin
-```
 
-## Check Repository Changes
+Check Repository Changes
 
-```bash
 cd ~/cs2043/pintos
 git status
 git diff
-```
 
-## Open the Current WSL Directory in Windows Explorer
+Open the Current WSL Directory in Windows Explorer
 
-```bash
 explorer.exe .
-```
 
----
+Important Source Directories
 
-# Important Source Directories
-
-```text
 src/
 ├── threads/       Kernel threads, scheduling and synchronization
 ├── userprog/      User processes and system calls
@@ -645,49 +584,56 @@ src/
 ├── tests/         Automated Pintos tests
 ├── utils/         Launcher and host-side utility programs
 └── misc/          Toolchain and support scripts
-```
 
----
-
-# Learning Path
+Learning Path
 
 I plan to use this repository in the following order:
 
-1. Understand the Pintos directory structure
-2. Trace the kernel boot process
-3. Study `threads/init.c`
-4. Study kernel-thread creation
-5. Understand timer interrupts
-6. Study thread scheduling
-7. Study synchronization primitives
-8. Learn kernel debugging with GDB
-9. Move into processes and system calls
-10. Explore virtual memory and file systems
+Understand the Pintos directory structure
 
----
+Trace the kernel boot process
 
-# Notes
+Study threads/init.c
 
-- This setup uses the normal Debian compiler.
-- Building the old GCC 6.2 Pintos cross-compiler is not required for this setup.
-- The `-fno-pie` and `-fno-pic` flags are necessary when using modern Debian GCC versions.
-- Pintos should be stored inside the WSL Linux filesystem.
-- The `src/utils` directory is added to `PATH`, allowing the guide-style `pintos --` command to be used.
-- Terminal-only QEMU mode is useful because it keeps all output inside the Debian terminal.
-- This setup was tested with the JHU CS318 Pintos distribution.
+Study kernel-thread creation
 
----
+Understand timer interrupts
 
-# Credits
+Study thread scheduling
+
+Study synchronization primitives
+
+Learn kernel debugging with GDB
+
+Move into processes and system calls
+
+Explore virtual memory and file systems
+
+Notes
+
+This setup uses the normal compiler provided by Ubuntu or Debian.
+
+Building the old GCC 6.2 Pintos cross-compiler is not required for this setup.
+
+The -fno-pie and -fno-pic flags are used for compatibility with modern Ubuntu and Debian GCC versions.
+
+Pintos should be stored inside the WSL Linux filesystem.
+
+The src/utils directory is added to PATH, allowing the guide-style pintos -- command to be used.
+
+Terminal-only QEMU mode is useful because it keeps all output inside the Ubuntu or Debian terminal.
+
+This setup uses the JHU CS318 Pintos distribution and supports both Ubuntu and Debian under WSL2.
+
+Credits
 
 Pintos was originally developed at Stanford University as a teaching operating system.
 
 This repository is based on the JHU CS318 Pintos distribution:
 
-- [JHU CS318 Pintos](https://github.com/jhu-cs318/pintos)
-- [Original Stanford Pintos Documentation](https://web.stanford.edu/class/cs140/projects/pintos/pintos.html)
+JHU CS318 Pintos
 
----
+Original Stanford Pintos Documentation
 
 <div align="center">
 
